@@ -1,4 +1,4 @@
-import json, time, requests, sys, urllib3
+import json, time, requests, sys, urllib3, socket, ssl
 from lxml import html
 from bs4 import BeautifulSoup
 from html.parser import HTMLParser
@@ -34,14 +34,16 @@ def bot(daysRange, month, showAll, targetPrice, interval):
     bestSoFar = [99999, 0, 0, 0, time.time()]
     while (True):
         for i in daysRange:
-            try:
-                now = searchFromLatam(i, month, showAll)
-            except ConnectionError as e:
+            try: now = searchFromLatam(i, month, showAll)
+            except:
                 print("ERROR: Couldn't connect (Retrying in %ds)" % interval)
                 break
             if (now[0] <= targetPrice):
                 print("YaY, better then targetPrice (%02d/%02d):" % (i, month), now)
-                sendEmail(mountString(now, i, month))
+                try: sendEmail(mountString(now, i, month))
+                except:
+                    print("ERROR: Couldn't send e-mail")
+                    break
             if (now[0] < bestSoFar[0] or (now[0] == bestSoFar[0] and i < bestSoFar[2] and DISABLED)):
                 bestSoFar = [now[0], now[1], i, month, time.time()]
         print("Best so far: %s" % mountString([bestSoFar[0], bestSoFar[1]], bestSoFar[2], bestSoFar[3]), "%lfs" % (time.time() - bestSoFar[4]))
