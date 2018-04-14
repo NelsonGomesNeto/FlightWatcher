@@ -1,11 +1,9 @@
-import json
-import time
-import requests
-import urllib3
+import json, time, requests, sys, urllib3
 from lxml import html
 from bs4 import BeautifulSoup
 from html.parser import HTMLParser
 api = "https://script.google.com/macros/s/AKfycbx-yKneSjj1gS_vbiGEv-mDKOd5eywt2dcIYIYSGNvacjec5dau/exec"
+DISABLED = 1
 
 def sendEmail(message):
     data = {"link": message}
@@ -33,16 +31,21 @@ def searchFromLatam(day, month, showAll):
     return(best)
 
 def bot(daysRange, month, showAll, targetPrice, interval):
+    bestSoFar = [99999, 0, 0, 0, time.time()]
     while (True):
-        bestSoFar = [99999, 0, 0, 0]
         for i in daysRange:
-            now = searchFromLatam(i, month, showAll)
+            try:
+                now = searchFromLatam(i, month, showAll)
+            except ConnectionError as e:
+                print("ERROR: Couldn't connect (Retrying in %ds)" % interval)
+                break
             if (now[0] <= targetPrice):
                 print("YaY, better then targetPrice (%02d/%02d):" % (i, month), now)
                 sendEmail(mountString(now, i, month))
-            if (now[0] < bestSoFar[0]):
-                bestSoFar = [now[0], now[1], i, month]
-        print("Best so far: %s" % mountString([bestSoFar[0], bestSoFar[1]], bestSoFar[2], bestSoFar[3]))
+            if (now[0] < bestSoFar[0] or (now[0] == bestSoFar[0] and i < bestSoFar[2] and DISABLED)):
+                bestSoFar = [now[0], now[1], i, month, time.time()]
+        print("Best so far: %s" % mountString([bestSoFar[0], bestSoFar[1]], bestSoFar[2], bestSoFar[3]), "%lfs" % (time.time() - bestSoFar[4]))
         time.sleep(interval)
 
-bot(range(21, 26 + 1), 5, 1, 400, 60 * 10)
+arguments = sys.argv
+bot(range(int(arguments[1]), int(arguments[2]) + 1), int(arguments[3]), int(arguments[4]), float(arguments[5]), int(arguments[6]))
