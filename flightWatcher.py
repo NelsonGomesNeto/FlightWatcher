@@ -50,4 +50,6 @@ def bot(daysRange, month, showAll, targetPrice, interval):
         time.sleep(interval)
 
 arguments = sys.argv
+if (len(sys.argv) < 7):
+    arguments = [0, 21, 26, 5, 1, 320, 600]
 bot(range(int(arguments[1]), int(arguments[2]) + 1), int(arguments[3]), int(arguments[4]), float(arguments[5]), int(arguments[6]))
