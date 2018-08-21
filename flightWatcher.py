@@ -17,8 +17,8 @@ def sendEmail(email, message):
 def dateString(nowDate):
     return("%02d/%02d/%04d" % (nowDate.day, nowDate.month, nowDate.year))
 
-def mountString(flightInfo, nowDate):
-    return("%s Flight " % (dateString(nowDate)) + flightInfo[1] + ": R$" + str(flightInfo[0]))
+def mountString(flightInfo, nowDate, origin, destination):
+    return("From %s to %s on %s for R$%.2lf, Flight Code %s" % (origin, destination, dateString(nowDate), flightInfo[0], flightInfo[1]))
 
 def searchFromLatam(nowDate, origin, destination, verbose):
     latamAPI = "https://bff.latam.com/ws/proxy/booking-webapp-bff/v1/public/revenue/recommendations/oneway?country=BR&language=PT&home=pt_br&origin=%s&destination=%s&departure=%04d-%02d-%02d&adult=1&cabin=Y" % (origin, destination, nowDate.year, nowDate.month, nowDate.day)
@@ -29,7 +29,7 @@ def searchFromLatam(nowDate, origin, destination, verbose):
         if (verbose): print("Flight: ", flight["flightCode"], " R$", flight["cabins"][0]["displayPrice"], sep='')
         if (flight["cabins"][0]["displayPrice"] < best[0]):
             best = [flight["cabins"][0]["displayPrice"], flight["flightCode"]]
-    print("Best Flight Found: %s\n" % (mountString(best, nowDate)))
+    print("Best Flight Found: %s\n" % (mountString(best, nowDate, origin, destination)))
     return(best)
 
 def bot(startingDate, endingDate, thresholdPrice, interval, origin, destination, emails, verbose):
@@ -40,10 +40,10 @@ def bot(startingDate, endingDate, thresholdPrice, interval, origin, destination,
             try:
                 searchedFlight = searchFromLatam(nowDate, origin, destination, verbose)
                 if (searchedFlight[0] <= thresholdPrice):
-                    print("YaY, better then threshold price:", mountString(searchedFlight, nowDate))
+                    print("YaY, better then threshold price:", mountString(searchedFlight, nowDate, origin, destination))
                     try:
                         for email in emails:
-                            sendEmail(email, mountString(searchedFlight, nowDate))
+                            sendEmail(email, mountString(searchedFlight, nowDate, origin, destination))
                     except Exception as e:
                         print("ERROR (%s): Couldn't send e-mail (Retrying in %.0lfs)" % (str(e), interval))
                 if (searchedFlight[0] < bestSoFar[0] or (theEarlierTheBetter and searchedFlight[0] == bestSoFar[0] and nowDate < bestSoFar[2])):
@@ -51,7 +51,7 @@ def bot(startingDate, endingDate, thresholdPrice, interval, origin, destination,
             except Exception as e:
                 print("ERROR (%s): Couldn't send e-mail (Retrying in %.0lfs)" % (str(e), interval))
             nowDate += timedelta(1)
-        print("Best so far: %s" % mountString([bestSoFar[0], bestSoFar[1]], bestSoFar[2]), "| searching time: %lfs" % (time.time() - bestSoFar[3]))
+        print("Best so far: %s" % mountString([bestSoFar[0], bestSoFar[1]], bestSoFar[2], origin, destination), "| searching time: %lfs" % (time.time() - bestSoFar[3]))
         time.sleep(interval)
 
 def readDate():
