@@ -1,10 +1,7 @@
 import json, time, requests, sys, urllib3, socket, ssl
 from datetime import date, timedelta
-# from lxml import html
-# from html.parser import HTMLParser
 api = "https://script.google.com/macros/s/AKfycbx-yKneSjj1gS_vbiGEv-mDKOd5eywt2dcIYIYSGNvacjec5dau/exec"
-# "https://script.google.com/macros/s/AKfycbx-yKneSjj1gS_vbiGEv-mDKOd5eywt2dcIYIYSGNvacjec5dau/exec"
-theEarlierTheBetter = 1
+theEarlierTheBetter = True
 
 def sendEmail(email, message):
     data = {"email": email, "message": message}
